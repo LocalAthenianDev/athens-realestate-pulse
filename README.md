@@ -54,6 +54,7 @@ npm run dev      # συνθετικά δεδομένα (MOCK=1), χωρίς πρ
 | `WINDOW_DAYS` | 30 | Παράθυρο ημερών για τους μέσους όρους |
 | `HOURLY_DAYS` | 14 | Ημέρες για το ωριαίο προφίλ (TwoHours) |
 | `CKAN_BASE` | https://opendata.cityofathens.gr | Βάση του API |
+| `APP_ENV` | production | Με οποιαδήποτε άλλη τιμή (π.χ. `test`) εμφανίζεται μπάρα «Δοκιμαστική έκδοση» και η σελίδα δεν ευρετηριάζεται |
 
 ## Συντεταγμένες σταθμών
 
@@ -74,6 +75,13 @@ npm run dev      # συνθετικά δεδομένα (MOCK=1), χωρίς πρ
 ## Deploy
 
 Node.js app σε Hostinger με auto-deploy από GitHub. Entry: `server.js`, start: `npm start`.
+
+| Branch | Site | Ρόλος |
+|---|---|---|
+| `main` | greenyellow-guanaco-259347.hostingersite.com | κανονικό site |
+| `test` | orangered-crocodile-963185.hostingersite.com | δοκιμές, με `APP_ENV=test` |
+
+Ροή: αλλαγές στο `test` → έλεγχος στο δοκιμαστικό site → merge στο `main` για να βγουν στο κανονικό.
 
 ## Περιορισμοί
 

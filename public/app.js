@@ -260,6 +260,12 @@
     .then((d) => {
       state.data = d;
       const m = d.meta;
+      if (m.env && m.env !== 'production') {
+        const bar = document.createElement('div');
+        bar.className = 'env-bar';
+        bar.textContent = `Δοκιμαστική έκδοση (${m.env}). Οι αλλαγές εδώ δεν επηρεάζουν το κανονικό site.`;
+        document.body.prepend(bar);
+      }
       const st = $('#status');
       st.classList.toggle('warn', m.stale || m.mock);
       st.innerHTML = `<span class="dot"></span>${m.mock ? 'Δοκιμαστικά δεδομένα · ' : ''}Δεδομένα έως ${fmtDate(m.latest)}${m.stale ? ` (πριν από ${m.ageDays} ημέρες)` : ''} · ${m.stations} σταθμοί`;
