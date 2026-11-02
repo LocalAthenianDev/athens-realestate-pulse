@@ -37,10 +37,10 @@ async function getData() {
 
 const app = express();
 app.use(compression());
-app.use(express.static('public', { maxAge: '1h' }));
+app.use(express.static('public', { maxAge: '5m' }));
 
 const send = (res, fn) => getData()
-  .then((d) => { res.set('Cache-Control', 'public, max-age=300'); fn(d); })
+  .then((d) => { res.set('Cache-Control', 'public, max-age=60'); fn(d); })
   .catch((e) => res.status(503).json({ error: 'Τα ανοιχτά δεδομένα δεν είναι διαθέσιμα αυτή τη στιγμή', detail: e.message }));
 
 app.get('/api/meta', (req, res) => send(res, (d) => res.json({ ...d.meta, cacheAgeMin: Math.round((Date.now() - cache.at) / 60000), lastError: cache.lastError })));

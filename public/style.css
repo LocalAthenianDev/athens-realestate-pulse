@@ -160,3 +160,8 @@ h1 span { color: var(--accent); font-weight: 700; }
   .detail { position: fixed; inset: auto 0 0 0; width: auto; max-height: 85vh; border-radius: 18px 18px 0 0; right: 0; bottom: 0; }
   .foot { padding: 8px 16px 24px; }
 }
+
+.tiles-muted { filter: grayscale(.55) contrast(.92) brightness(1.04); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tiles-muted { filter: invert(1) hue-rotate(180deg) grayscale(.5) brightness(.85) contrast(.9); }
+}

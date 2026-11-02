@@ -77,14 +77,16 @@
     const anyCoords = state.data.stations.some((s) => s.coords);
     if (!anyCoords) { $('#map').hidden = true; $('#nomap').hidden = false; $('#legend').hidden = true; return; }
     map = L.map('map', { zoomControl: true, attributionControl: true }).setView([37.985, 23.73], 13);
-    const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-    L.tileLayer(`https://{s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`, {
-      maxZoom: 19, subdomains: 'abcd',
-      attribution: '&copy; OpenStreetMap, &copy; CARTO',
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, className: 'tiles-muted',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
     layer = L.layerGroup().addTo(map);
     const pts = state.data.stations.filter((s) => s.coords).map((s) => s.coords);
-    if (pts.length > 1) map.fitBounds(pts, { padding: [30, 30] });
+    const fit = () => { map.invalidateSize(); if (pts.length > 1) map.fitBounds(pts, { padding: [24, 24] }); };
+    fit();
+    requestAnimationFrame(() => setTimeout(fit, 50));
+    new ResizeObserver(() => map.invalidateSize()).observe(document.getElementById('map'));
   }
 
   function drawMap() {
@@ -93,7 +95,7 @@
     const maxV = Math.max(...state.items.map((i) => i.metrics.visitors || 0), 1);
     for (const it of state.items) {
       if (!it.coords) continue;
-      const r = 6 + 16 * Math.sqrt((it.metrics.visitors || 0) / maxV);
+      const r = (it.kind === 'nb' ? 6 : 4) + 10 * Math.sqrt((it.metrics.visitors || 0) / maxV);
       const sel = state.selected && state.selected.key === it.key;
       const m = L.circleMarker(it.coords, {
         radius: r, weight: sel ? 3 : 1.5, color: sel ? css('--accent') : css('--surface'),
