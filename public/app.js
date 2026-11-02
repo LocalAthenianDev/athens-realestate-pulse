@@ -10,14 +10,15 @@
     quiet: {
       label: 'Score ήσυχης κατοικίας',
       title: 'Κατάταξη για ήσυχη κατοικία',
-      weights: { nightShare: -0.4, visitors: -0.35, weekendRatio: -0.25 },
-      why: 'Ευνοεί σημεία με λίγη νυχτερινή κίνηση, χαμηλή συνολική επισκεψιμότητα και ήρεμα Σαββατοκύριακα.',
+      // nightShare μετράει μόνο όταν το API δίνει δίωρα δεδομένα (TwoHours)
+      weights: { visitors: -0.4, concurrent: -0.3, weekendRatio: -0.3, nightShare: -0.3 },
+      why: 'Ευνοεί σημεία με λίγους επισκέπτες, λίγο κόσμο ταυτόχρονα στο δρόμο και ήρεμα Σαββατοκύριακα.',
     },
     lively: {
       label: 'Score ζωντανής κατοικίας',
       title: 'Κατάταξη για ζωντανή κατοικία',
-      weights: { eveningShare: 0.35, weekendRatio: 0.25, concurrent: 0.25, trendPct: 0.15 },
-      why: 'Ευνοεί σημεία με κόσμο τα βράδια και τα Σαββατοκύριακα, σταθερή παρουσία στο δρόμο και ανοδική τάση.',
+      weights: { concurrent: 0.3, weekendRatio: 0.3, dwellMin: 0.2, trendPct: 0.2, eveningShare: 0.3 },
+      why: 'Ευνοεί σημεία με σταθερή παρουσία κόσμου, κίνηση τα Σαββατοκύριακα, ανθρώπους που μένουν και ανοδική τάση.',
     },
   };
 
@@ -138,7 +139,10 @@
     const p = PROFILES[state.profile];
     const m = it.metrics;
     $('#detail').hidden = false;
-    $('#d-kicker').textContent = it.kind === 'nb' ? 'Γειτονιά' : `Σταθμός WiFi #${it.id} · ${title(it.neighbourhood)}`;
+    const district = it.kind === 'nb' ? it.stations[0].district : it.district;
+    $('#d-kicker').textContent = it.kind === 'nb'
+      ? ['Γειτονιά', district].filter(Boolean).join(' · ')
+      : [`Σταθμός WiFi #${it.id}`, it.neighbourhood, it.address].filter(Boolean).join(' · ');
     $('#d-title').textContent = title(it.name);
     $('#d-score').textContent = it.score ?? 'n/a';
     $('#d-score').style.color = colorFor(it.score) === ramp()[0] ? css('--ink') : colorFor(it.score);
@@ -151,7 +155,9 @@
       kpi(n(m.concurrent, 1), 'Ταυτόχρονα παρόντες', it.pct.concurrent),
       kpi(sign(m.trendPct), 'Τάση 30 ημερών', it.pct.trendPct),
       kpi(m.weekendRatio ? '×' + n(m.weekendRatio, 2) : 'n/a', 'Σαββατοκύριακο/καθημερινή', it.pct.weekendRatio),
-      kpi(m.nightShare !== null && m.nightShare !== undefined ? n(m.nightShare, 1) + '%' : 'n/a', 'Νυχτερινή κίνηση (22 έως 06)', it.pct.nightShare),
+      m.nightShare !== null && m.nightShare !== undefined
+        ? kpi(n(m.nightShare, 1) + '%', 'Νυχτερινή κίνηση (22 έως 06)', it.pct.nightShare)
+        : kpi(`${n(m.daysCovered)}/${state.data.meta.windowDays}`, 'Ημέρες με δεδομένα', null),
     ].join('');
     let why = p.why;
     if (it.link) why += ` <a href="${it.link}" target="_blank" rel="noopener">Η γειτονιά στο citizenhub</a>`;
