@@ -4,21 +4,21 @@
     commercial: {
       label: 'Score επαγγελματικού χώρου',
       title: 'Κατάταξη για επαγγελματικό χώρο',
-      weights: { visitors: 0.45, dwellMin: 0.25, trendPct: 0.15, concurrent: 0.15 },
-      why: 'Μετράει κυρίως πόσος κόσμος περνάει, πόση ώρα μένει και αν η κίνηση ανεβαίνει. Υψηλό score σημαίνει περισσότερους πιθανούς πελάτες στο σημείο.',
+      weights: { traffic: 0.4, visitors: 0.25, concurrent: 0.2, trendPct: 0.15 },
+      why: 'Μετράει κυρίως τον όγκο κίνησης, πόσες διαφορετικές συσκευές περνούν, πόσος κόσμος βρίσκεται ταυτόχρονα στο σημείο και αν η κίνηση ανεβαίνει. Υψηλό score σημαίνει περισσότερους πιθανούς πελάτες.',
     },
     quiet: {
       label: 'Score ήσυχης κατοικίας',
       title: 'Κατάταξη για ήσυχη κατοικία',
       // nightShare μετράει μόνο όταν το API δίνει δίωρα δεδομένα (TwoHours)
-      weights: { visitors: -0.4, concurrent: -0.3, weekendRatio: -0.3, nightShare: -0.3 },
-      why: 'Ευνοεί σημεία με λίγους επισκέπτες, λίγο κόσμο ταυτόχρονα στο δρόμο και ήρεμα Σαββατοκύριακα.',
+      weights: { traffic: -0.4, concurrent: -0.3, weekendRatio: -0.3, nightShare: -0.3 },
+      why: 'Ευνοεί σημεία με χαμηλό όγκο κίνησης, λίγο κόσμο ταυτόχρονα στο δρόμο και ήρεμα Σαββατοκύριακα.',
     },
     lively: {
       label: 'Score ζωντανής κατοικίας',
       title: 'Κατάταξη για ζωντανή κατοικία',
-      weights: { concurrent: 0.3, weekendRatio: 0.3, dwellMin: 0.2, trendPct: 0.2, eveningShare: 0.3 },
-      why: 'Ευνοεί σημεία με σταθερή παρουσία κόσμου, κίνηση τα Σαββατοκύριακα, ανθρώπους που μένουν και ανοδική τάση.',
+      weights: { concurrent: 0.35, weekendRatio: 0.35, trendPct: 0.3, eveningShare: 0.3 },
+      why: 'Ευνοεί σημεία με σταθερή παρουσία κόσμου, κίνηση τα Σαββατοκύριακα και ανοδική τάση.',
     },
   };
 
@@ -92,20 +92,20 @@
   function drawMap() {
     if (!map) return;
     layer.clearLayers();
-    const maxV = Math.max(...state.items.map((i) => i.metrics.visitors || 0), 1);
+    const maxV = Math.max(...state.items.map((i) => i.metrics.traffic || 0), 1);
     for (const it of state.items) {
       if (!it.coords) continue;
-      const r = (it.kind === 'nb' ? 6 : 4) + 10 * Math.sqrt((it.metrics.visitors || 0) / maxV);
+      const r = (it.kind === 'nb' ? 6 : 4) + 10 * Math.sqrt((it.metrics.traffic || 0) / maxV);
       const sel = state.selected && state.selected.key === it.key;
       const m = L.circleMarker(it.coords, {
         radius: r, weight: sel ? 3 : 1.5, color: sel ? css('--accent') : css('--surface'),
         fillColor: colorFor(it.score), fillOpacity: 0.9,
       }).addTo(layer);
-      m.bindTooltip(`<b>${title(it.name)}</b><br>${PROFILES[state.profile].label}: <b>${it.score ?? 'n/a'}</b><br>${fmt.format(Math.round(it.metrics.visitors || 0))} επισκέπτες/ημέρα`);
+      m.bindTooltip(`<b>${title(it.name)}</b><br>${PROFILES[state.profile].label}: <b>${it.score ?? 'n/a'}</b><br>${fmt.format(Math.round(it.metrics.traffic || 0))} αθροιστική κίνηση/ημέρα`);
       m.on('click', () => select(it));
     }
     const r = ramp();
-    $('#legend').innerHTML = `${PROFILES[state.profile].label}<div class="bar">${r.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div class="ends"><span>0</span><span>100</span></div>Μέγεθος κύκλου: επισκέπτες/ημέρα`;
+    $('#legend').innerHTML = `${PROFILES[state.profile].label}<div class="bar">${r.map((c) => `<i style="background:${c}"></i>`).join('')}</div><div class="ends"><span>0</span><span>100</span></div>Μέγεθος κύκλου: αθροιστική κίνηση/ημέρα`;
   }
 
   /* ---------- Κατάταξη ---------- */
@@ -119,8 +119,8 @@
     if (!list.length) { ol.innerHTML = '<li class="empty">Δεν βρέθηκαν αποτελέσματα</li>'; return; }
     ol.innerHTML = list.map((it, i) => {
       const sub = it.kind === 'nb'
-        ? `${it.stations.length} ${it.stations.length === 1 ? 'σταθμός' : 'σταθμοί'} · ${fmt.format(Math.round(it.metrics.visitors || 0))} επισκ./ημέρα`
-        : `${title(it.neighbourhood)} · ${fmt.format(it.metrics.visitors || 0)} επισκ./ημέρα`;
+        ? `${it.stations.length} ${it.stations.length === 1 ? 'σταθμός' : 'σταθμοί'} · ${fmt.format(Math.round(it.metrics.traffic || 0))} κίνηση/ημέρα`
+        : `${title(it.neighbourhood)} · ${fmt.format(it.metrics.traffic || 0)} κίνηση/ημέρα`;
       return `<li data-key="${it.key}" class="${state.selected && state.selected.key === it.key ? 'active' : ''}" tabindex="0">
         <span class="pos">${i + 1}</span>
         <div><div class="nm">${title(it.name)}</div><div class="sub">${sub}</div>
@@ -152,8 +152,8 @@
     const n = (v, d = 0) => (v === null || v === undefined ? 'n/a' : fmt.format(Number(v.toFixed(d))));
     const sign = (v) => (v === null || v === undefined ? 'n/a' : (v > 0 ? '+' : '') + n(v, 1) + '%');
     $('#d-kpis').innerHTML = [
-      kpi(n(m.visitors), 'Επισκέπτες/ημέρα', it.pct.visitors),
-      kpi(m.dwellMin ? `${n(m.dwellMin)}′` : 'n/a', 'Χρόνος παραμονής (εκτ.)', it.pct.dwellMin),
+      kpi(n(m.traffic), 'Αθροιστική κίνηση/ημέρα', it.pct.traffic),
+      kpi(n(m.visitors), 'Μοναδικές συσκευές/ημέρα', it.pct.visitors),
       kpi(n(m.concurrent, 1), 'Ταυτόχρονα παρόντες', it.pct.concurrent),
       kpi(sign(m.trendPct), 'Τάση 30 ημερών', it.pct.trendPct),
       kpi(m.weekendRatio ? '×' + n(m.weekendRatio, 2) : 'n/a', 'Σαββατοκύριακο/καθημερινή', it.pct.weekendRatio),
@@ -170,7 +170,7 @@
     const all = await Promise.all(ids.map((id) => fetch(`api/stations/${id}/series`).then((r) => r.json())));
     if (state.selected !== it) return;
     const dates = all[0].dates;
-    const vis = dates.map((_, i) => { const v = all.map((s) => s.visitors[i]).filter((x) => x !== null); return v.length ? v.reduce((a, b) => a + b, 0) : null; });
+    const vis = dates.map((_, i) => { const v = all.map((s) => s.traffic[i]).filter((x) => x !== null); return v.length ? v.reduce((a, b) => a + b, 0) : null; });
     const accent = css('--accent');
     const grid = css('--line');
     const muted = css('--muted');
