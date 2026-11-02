@@ -22,7 +22,7 @@
     },
   };
 
-  const state = { profile: 'commercial', level: 'nb', data: null, items: [], selected: null, q: '' };
+  const state = { profile: 'commercial', level: 'nb', data: null, items: [], selected: null, q: '', range: '60d' };
   const $ = (s) => document.querySelector(s);
   const fmt = new Intl.NumberFormat('el-GR');
   const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('el-GR', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -131,6 +131,27 @@
 
   /* ---------- Λεπτομέρειες ---------- */
   let chDaily = null;
+  const seriesCache = {};
+  let lastSeries = null;
+  const avgAt = (arrs, i) => { const v = arrs.map((a) => a[i]).filter((x) => x !== null && x !== undefined); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  function drawHistory() {
+    if (!lastSeries) return;
+    const { it, all } = lastSeries;
+    const yearly = state.range === '12m';
+    const multi = all.length > 1;
+    const labelsRaw = yearly ? all[0].weeks : all[0].dates;
+    const data = labelsRaw.map((_, i) => avgAt(all.map((s) => (yearly ? s.weeklyTraffic : s.traffic)), i));
+    const fmtD = (d) => new Date(d + 'T12:00:00').toLocaleDateString('el-GR', yearly ? { month: 'short', year: '2-digit' } : { day: 'numeric', month: 'short' });
+    $('#hist-title').textContent = (yearly ? 'Αθροιστική κίνηση ανά εβδομάδα, 12 μήνες' : 'Αθροιστική κίνηση ανά ημέρα, 60 ημέρες') + (multi ? ' (μέσος όρος σταθμών)' : '');
+    const accent = css('--accent');
+    chDaily?.destroy();
+    chDaily = new Chart($('#c-daily'), {
+      type: 'line',
+      data: { labels: labelsRaw.map(fmtD), datasets: [{ data, borderColor: accent, backgroundColor: accent + '22', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3, spanGaps: false }] },
+      options: chartOpts(css('--line'), css('--muted'), yearly ? 7 : 6),
+    });
+    $('#hist-note').textContent = yearly ? 'Κενά = εβδομάδες χωρίς αξιόπιστα δεδομένα (π.χ. Απρίλιος έως Ιούλιος 2026, όταν το API δημοσίευε σε άλλη κλίμακα).' : '';
+  }
   let chHourly = null;
   const kpi = (val, label, pct) => `<div class="kpi"><b>${val}</b><span>${label}</span>${pct !== null && pct !== undefined ? `<em>${Math.round(pct)}ο εκατοστημόριο</em>` : ''}</div>`;
 
@@ -156,6 +177,8 @@
       kpi(n(m.visitors), 'Μοναδικές συσκευές/ημέρα', it.pct.visitors),
       kpi(n(m.concurrent, 1), 'Ταυτόχρονα παρόντες', it.pct.concurrent),
       kpi(sign(m.trendPct), 'Τάση 30 ημερών', it.pct.trendPct),
+      kpi(sign(m.summerDip), m.summerYear ? `Αύγουστος ${m.summerYear} έναντι φθινοπώρου` : 'Αύγουστος έναντι φθινοπώρου', null),
+      kpi(sign(m.yoyPct), m.yoyPct === null || m.yoyPct === undefined ? 'Σε σχέση με πέρσι (μόλις υπάρξει ιστορικό)' : 'Τελευταίες 4 εβδομάδες έναντι πέρσι', null),
       kpi(m.weekendRatio ? '×' + n(m.weekendRatio, 2) : 'n/a', 'Σαββατοκύριακο/καθημερινή', it.pct.weekendRatio),
       m.nightShare !== null && m.nightShare !== undefined
         ? kpi(n(m.nightShare, 1) + '%', 'Νυχτερινή κίνηση (22 έως 06)', it.pct.nightShare)
@@ -165,28 +188,19 @@
     if (it.link) why += ` <a href="${it.link}" target="_blank" rel="noopener">Η γειτονιά στο citizenhub</a>`;
     $('#d-why').innerHTML = why;
 
-    // Ημερήσια σειρά (για γειτονιά: άθροισμα σταθμών)
+    // Ιστορικό: 60 ημέρες ή 12 μήνες. Για γειτονιά με πολλούς σταθμούς: μέσος όρος σταθμών.
     const ids = it.kind === 'nb' ? it.stations.map((s) => s.id) : [it.id];
-    const all = await Promise.all(ids.map((id) => fetch(`api/stations/${id}/series`).then((r) => r.json())));
+    const all = await Promise.all(ids.map((id) => seriesCache[id] || (seriesCache[id] = fetch(`api/stations/${id}/series`).then((r) => r.json()))));
     if (state.selected !== it) return;
-    const dates = all[0].dates;
-    const vis = dates.map((_, i) => { const v = all.map((s) => s.traffic[i]).filter((x) => x !== null); return v.length ? v.reduce((a, b) => a + b, 0) : null; });
-    const accent = css('--accent');
-    const grid = css('--line');
-    const muted = css('--muted');
-    chDaily?.destroy();
-    chDaily = new Chart($('#c-daily'), {
-      type: 'line',
-      data: { labels: dates.map((d) => new Date(d + 'T12:00:00').toLocaleDateString('el-GR', { day: 'numeric', month: 'short' })), datasets: [{ data: vis, borderColor: accent, backgroundColor: accent + '22', fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3, spanGaps: true }] },
-      options: chartOpts(grid, muted, 6),
-    });
+    lastSeries = { it, all };
+    drawHistory();
     chHourly?.destroy();
     if (it.profile) {
       $('#d-hourly-wrap').hidden = false;
       chHourly = new Chart($('#c-hourly'), {
         type: 'bar',
         data: { labels: it.profile.map((_, i) => String(i * 2).padStart(2, '0')), datasets: [{ data: it.profile, backgroundColor: it.profile.map((_, i) => (i * 2 >= 22 || i * 2 < 6 ? css('--s4') : css('--s2'))), borderRadius: 4 }] },
-        options: chartOpts(grid, muted, 12),
+        options: chartOpts(css('--line'), css('--muted'), 12),
       });
     } else {
       $('#d-hourly-wrap').hidden = true;
@@ -218,11 +232,16 @@
     document.querySelectorAll('.profiles button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
     refresh();
   }));
-  document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.panel-head .seg button').forEach((b) => b.addEventListener('click', () => {
     state.level = b.dataset.level;
     state.selected = null;
-    document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    document.querySelectorAll('.panel-head .seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     refresh();
+  }));
+  document.querySelectorAll('.range button').forEach((b) => b.addEventListener('click', () => {
+    state.range = b.dataset.range;
+    document.querySelectorAll('.range button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    drawHistory();
   }));
   $('#search').addEventListener('input', (e) => { state.q = e.target.value; drawRanking(); });
   const pick = (e) => {
