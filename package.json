@@ -1,0 +1,20 @@
+{
+  "name": "athens-realestate-pulse",
+  "version": "1.0.0",
+  "description": "Real estate εργαλείο για τον Δήμο Αθηναίων με live ανοιχτά δεδομένα WiFi επισκεψιμότητας (Έξυπνη Γειτονιά)",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "MOCK=1 node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Thomas Ntoupis (LocalAthenianDev)",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "compression": "^1.7.5"
+  }
+}

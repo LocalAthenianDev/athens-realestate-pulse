@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Athens Pulse · Ακίνητα</title>
+  <meta name="description" content="Βρες πού κινείται η Αθήνα. Δείκτες επισκεψιμότητας ανά γειτονιά από τα ανοιχτά δεδομένα WiFi του Δήμου Αθηναίων, για επαγγελματικούς χώρους και κατοικία.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>Athens Pulse <span>Ακίνητα</span></h1>
+        <p>Πού κινείται η πόλη, με live ανοιχτά δεδομένα WiFi του Δήμου Αθηναίων</p>
+      </div>
+    </div>
+    <div id="status" class="status">Φόρτωση δεδομένων…</div>
+  </header>
+
+  <nav class="profiles" role="tablist" aria-label="Προφίλ αναζήτησης">
+    <button role="tab" data-profile="commercial" aria-selected="true">
+      <strong>Επαγγελματικός χώρος</strong><small>Κατάστημα, καφέ, γραφείο</small>
+    </button>
+    <button role="tab" data-profile="quiet" aria-selected="false">
+      <strong>Κατοικία: ήσυχη</strong><small>Λίγη νυχτερινή κίνηση</small>
+    </button>
+    <button role="tab" data-profile="lively" aria-selected="false">
+      <strong>Κατοικία: ζωντανή</strong><small>Βραδινή ζωή, Σαββατοκύριακα</small>
+    </button>
+  </nav>
+
+  <main class="layout">
+    <section class="mapwrap">
+      <div id="map" aria-label="Χάρτης σταθμών WiFi"></div>
+      <div id="nomap" class="nomap" hidden>
+        Οι συντεταγμένες των σταθμών δεν είναι διαθέσιμες ακόμα, οπότε εμφανίζεται μόνο η κατάταξη.
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2 id="rank-title">Κατάταξη</h2>
+        <div class="seg" role="group" aria-label="Επίπεδο">
+          <button data-level="nb" aria-pressed="true">Γειτονιές</button>
+          <button data-level="st" aria-pressed="false">Σταθμοί</button>
+        </div>
+      </div>
+      <input id="search" type="search" placeholder="Αναζήτηση γειτονιάς ή σταθμού" aria-label="Αναζήτηση">
+      <ol id="ranking" class="ranking"></ol>
+    </section>
+
+    <section id="detail" class="detail" hidden>
+      <button class="close" id="close" aria-label="Κλείσιμο">×</button>
+      <p class="eyebrow" id="d-kicker"></p>
+      <h2 id="d-title"></h2>
+      <div class="score-big"><span id="d-score"></span><small id="d-score-label"></small></div>
+      <div class="kpis" id="d-kpis"></div>
+      <h3>Ημερήσιοι μοναδικοί επισκέπτες, τελευταίες 60 ημέρες</h3>
+      <div class="chart"><canvas id="c-daily"></canvas></div>
+      <div id="d-hourly-wrap">
+        <h3>Μέση ταυτόχρονη παρουσία ανά δίωρο</h3>
+        <div class="chart small"><canvas id="c-hourly"></canvas></div>
+      </div>
+      <p class="why" id="d-why"></p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <details>
+      <summary>Πώς υπολογίζονται οι δείκτες</summary>
+      <ul>
+        <li><b>Επισκέπτες/ημέρα</b>: μέσος όρος μοναδικών συσκευών (MAC) που ανιχνεύει ο σταθμός ανά ημέρα, στις τελευταίες 30 ημέρες με δεδομένα.</li>
+        <li><b>Χρόνος παραμονής</b>: εκτίμηση από αθροιστική επισκεψιμότητα (μία καταμέτρηση ανά 30λεπτο) διά μοναδικούς επισκέπτες, επί 30 λεπτά.</li>
+        <li><b>Τάση</b>: μεταβολή επισκεπτών τελευταίων 30 ημερών έναντι των 30 προηγούμενων.</li>
+        <li><b>Νυχτερινή κίνηση</b>: μερίδιο της ταυτόχρονης παρουσίας μεταξύ 22:00 και 06:00.</li>
+        <li>Κάθε score είναι σταθμισμένος συνδυασμός εκατοστημορίων μεταξύ όλων των σταθμών (0 έως 100). Δείχνει σχετική θέση, όχι τιμή ακινήτου.</li>
+        <li>Οι σταθμοί είναι κυρίως σε πλατείες, πάρκα και δημοτικά κτίρια, άρα μετρούν την κίνηση στο σημείο τους και όχι σε όλη τη γειτονιά.</li>
+      </ul>
+    </details>
+    <p id="sources"></p>
+    <p class="by">Ένα project του <a href="https://github.com/LocalAthenianDev" rel="noopener">Local Athenian Dev</a>. Δεδομένα: Δήμος Αθηναίων, Έξυπνη Γειτονιά, CC BY 4.0.</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
