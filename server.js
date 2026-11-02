@@ -38,6 +38,11 @@ async function getData() {
 const app = express();
 app.use(compression());
 app.use(express.static('public', { maxAge: '5m' }));
+// Ανοιχτές βιβλιοθήκες και γραμματοσειρά από τον δικό μας server, χωρίς CDN τρίτων
+const vendor = (pkgPath) => express.static(new URL(`./node_modules/${pkgPath}`, import.meta.url).pathname, { maxAge: '7d' });
+app.use('/vendor/leaflet', vendor('leaflet/dist'));
+app.use('/vendor/chartjs', vendor('chart.js/dist'));
+app.use('/vendor/commissioner', vendor('@fontsource/commissioner'));
 
 const send = (res, fn) => getData()
   .then((d) => { res.set('Cache-Control', 'public, max-age=60'); fn(d); })
