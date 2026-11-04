@@ -78,10 +78,12 @@ Node.js app σε Hostinger με auto-deploy από GitHub. Entry: `server.js`, s
 
 | Branch | Site | Ρόλος |
 |---|---|---|
-| `main` | greenyellow-guanaco-259347.hostingersite.com | κανονικό site |
-| `test` | orangered-crocodile-963185.hostingersite.com | δοκιμές, με `APP_ENV=test` |
+| `main` | [pulse.athensapps.gr](https://pulse.athensapps.gr) | κανονικό site |
+| `test` | [pulse-test.athensapps.gr](https://pulse-test.athensapps.gr) | δοκιμές, με `APP_ENV=test` |
 
-Ροή: αλλαγές στο `test` → έλεγχος στο δοκιμαστικό site → merge στο `main` για να βγουν στο κανονικό.
+Ροή: αλλαγές στο `test`, έλεγχος στο δοκιμαστικό site, και merge στο `main` για να βγουν στο κανονικό.
+
+Το Athens Pulse είναι μία από τις εφαρμογές του [athensapps.gr](https://athensapps.gr).
 
 ## Περιορισμοί
 
